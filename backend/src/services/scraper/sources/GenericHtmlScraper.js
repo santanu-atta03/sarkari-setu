@@ -1,7 +1,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const Job = require('../../models/Job');
-const logger = require('../../config/logger');
+const Job = require('../../../models/Job');
+const logger = require('../../../config/logger');
 
 class GenericHtmlScraper {
   constructor(sourceConfig) {

@@ -3,21 +3,41 @@ import { Metadata, ResolvingMetadata } from 'next';
 import JobDetailsContainer from '@/components/public/JobDetailsContainer';
 import api from '@/lib/api';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-async function getJob(slug: string) {
+export async function generateStaticParams() {
   try {
-    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const baseURL = process.env.NEXT_PUBLIC_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const resp = await api.get(`${baseURL}/jobs/slugs`);
+    if (resp.data.success && Array.isArray(resp.data.data)) {
+       return resp.data.data.map((job: any) => ({
+          slug: job.slug,
+       }));
+    }
+    return [];
+  } catch (err) {
+    console.error('Error in generateStaticParams:', err);
+    return [];
+  }
+}
+
+const getJob = cache(async (slug: string) => {
+  try {
+    const baseURL = process.env.NEXT_PUBLIC_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     const resp = await api.get(`${baseURL}/jobs/${slug}`);
     return resp.data.data;
   } catch (err) {
     console.error('Error fetching job:', err);
     return null;
   }
-}
+});
+
+// Revalidate every 10 minutes
+export const revalidate = 600;
 
 export async function generateMetadata(
   { params }: Props,

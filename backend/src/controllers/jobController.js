@@ -54,16 +54,20 @@ const paginatedResponse = (res, { jobs, total, page, limit }) => {
  * List jobs with filtering, sorting, pagination, and full-text search.
  */
 exports.listJobs = async (req, res) => {
-  const { page, limit, sort, status, state, jobType, qualification, category, q, isTrending, isFeatured, age } = req.query;
+  let { page = 1, limit = 10, sort = 'newest', status = 'published', state, jobType, qualification, category, q, isTrending, isFeatured, age } = req.query;
+
+  // Convert to numbers
+  page = parseInt(page, 10) || 1;
+  limit = parseInt(limit, 10) || 10;
 
   // Build filter
   const filter = { status };
 
-  if (state)         filter.state = new RegExp(`^${state}$`, 'i');
+  if (state)         filter.state = state;
   if (jobType)       filter.jobType = jobType;
   if (qualification) filter.qualification = qualification;
-  if (category)      filter.category = new RegExp(category, 'i');
-  if (isTrending !== undefined) filter.isTrending = isTrending;
+  if (category)      filter.category = category;
+  if (isTrending !== undefined) filter.isTrending = isTrending === 'true';
   if (isFeatured !== undefined) filter.isFeatured = isFeatured === 'true';
   if (req.query.hasAdmitCard === 'true') filter.admitCardUrl = { $ne: '' };
   if (req.query.hasResult === 'true')    filter.resultUrl = { $ne: '' };

@@ -1,6 +1,6 @@
 const Parser = require('rss-parser');
-const Job = require('../../models/Job');
-const logger = require('../../config/logger'); // assuming logger exists, if not I'll create or check existing
+const Job = require('../../../models/Job');
+const logger = require('../../../config/logger');
 
 const parser = new Parser();
 

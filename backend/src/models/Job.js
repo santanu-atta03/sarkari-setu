@@ -396,6 +396,12 @@ JobSchema.index({ status: 1, isTrending: -1, viewCount: -1 });
 JobSchema.index({ status: 1, state: 1, createdAt: -1 });
 JobSchema.index({ status: 1, jobType: 1, createdAt: -1 });
 JobSchema.index({ status: 1, qualification: 1, createdAt: -1 });
+JobSchema.index({ status: 1, isFeatured: -1, createdAt: -1 });
+
+// New indexes for better performance
+JobSchema.index({ organization: 1 });
+JobSchema.index({ 'eligibility.minAge': 1 });
+JobSchema.index({ 'eligibility.maxAge': 1 });
 
 // ─── Virtuals ──────────────────────────────────────────────────────────────────
 
