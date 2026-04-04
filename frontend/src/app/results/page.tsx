@@ -12,57 +12,46 @@ import {
   ChevronLeft, 
   ChevronRight, 
   FilterX,
-  TrendingUp,
   MapPin,
-  Briefcase,
-  GraduationCap,
-  Calendar,
   AlertCircle,
-  Loader2
+  Loader2,
+  Trophy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-function JobsListContent() {
+function ResultsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // State for filters
   const [jobs, setJobs] = useState<any[]>([]);
   const [totalJobs, setTotalJobs] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Current Filter values from URL
   const [filters, setFilters] = useState({
     page: parseInt(searchParams.get('page') || '1'),
     limit: 12,
     sort: searchParams.get('sort') || 'newest',
     state: searchParams.get('state') || '',
-    jobType: searchParams.get('jobType') || '',
-    qualification: searchParams.get('qualification') || '',
     q: searchParams.get('q') || '',
-    status: 'published'
+    status: 'published',
+    hasResult: 'true'
   });
 
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
 
-  // Constants for filters
   const states = ['All India', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'];
-  const jobTypes = ['All Types', 'Government', 'Public Sector', 'Railway', 'Banking', 'Police/Defence', 'State Govt', 'Teaching'];
-  const qualifications = ['All Qualifications', '10th Pass', '12th Pass', 'Graduate', 'Post Graduate', 'Diploma', 'ITI', 'Engineering', 'Medical', 'PhD'];
 
   useEffect(() => {
-    // Update local filter state when URL changes
     setFilters({
       page: parseInt(searchParams.get('page') || '1'),
       limit: 12,
       sort: searchParams.get('sort') || 'newest',
       state: searchParams.get('state') || '',
-      jobType: searchParams.get('jobType') || '',
-      qualification: searchParams.get('qualification') || '',
       q: searchParams.get('q') || '',
-      status: 'published'
+      status: 'published',
+      hasResult: 'true'
     });
   }, [searchParams]);
 
@@ -72,10 +61,7 @@ function JobsListContent() {
       setError(null);
       try {
         const queryParams: any = { ...filters };
-        // Clean up empty strings and "All" variants
         if (!queryParams.state || queryParams.state === 'All India') delete queryParams.state;
-        if (!queryParams.jobType || queryParams.jobType === 'All Types') delete queryParams.jobType;
-        if (!queryParams.qualification || queryParams.qualification === 'All Qualifications') delete queryParams.qualification;
         if (!queryParams.q) delete queryParams.q;
 
         const resp = await api.get('/jobs', { params: queryParams });
@@ -86,7 +72,7 @@ function JobsListContent() {
         }
       } catch (err: any) {
         console.error(err);
-        setError('Failed to load jobs. Please try again later.');
+        setError('Failed to load results. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -97,12 +83,12 @@ function JobsListContent() {
   const updateURL = (newFilters: any) => {
     const params = new URLSearchParams();
     Object.entries(newFilters).forEach(([key, value]) => {
-      if (value && value !== '1' && key !== 'limit' && key !== 'status') {
+      if (value && value !== '1' && key !== 'limit' && key !== 'status' && key !== 'hasResult') {
          if (typeof value === 'string' && value.includes('All')) return;
          params.set(key, String(value));
       }
     });
-    router.push(`/jobs?${params.toString()}`);
+    router.push(`/results?${params.toString()}`);
   };
 
   const handleFilterChange = (key: string, value: string) => {
@@ -116,10 +102,9 @@ function JobsListContent() {
       limit: 12,
       sort: 'newest',
       state: '',
-      jobType: '',
-      qualification: '',
       q: '',
-      status: 'published'
+      status: 'published',
+      hasResult: 'true'
     };
     updateURL(newFilters);
   };
@@ -129,25 +114,24 @@ function JobsListContent() {
       <Navbar />
       
       <main className="pt-32 pb-24 px-6 md:px-12 max-w-8xl mx-auto">
-        {/* Header Section */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter uppercase mb-2">
-              Explore <span className="text-blue-600">Opportunities</span>
+              Exam <span className="text-green-600">Results</span>
             </h1>
             <p className="text-zinc-500 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
-              <span className="w-8 h-[2px] bg-blue-600 rounded-full" />
-              Showing {totalJobs} active government vacancies
+              <span className="w-8 h-[2px] bg-green-600 rounded-full" />
+              Check your performance in {totalJobs} recent competitive exams
             </p>
           </div>
           
           <div className="flex flex-wrap items-center gap-4">
              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-green-500 transition-colors" size={18} />
                 <input 
                   type="text" 
-                  placeholder="Keyword search..." 
-                  className="pl-12 pr-6 py-4 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all w-full md:w-64"
+                  placeholder="Search exam/board..." 
+                  className="pl-12 pr-6 py-4 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-all w-full md:w-64"
                   value={filters.q}
                   onChange={(e) => setFilters({...filters, q: e.target.value})}
                   onKeyDown={(e) => e.key === 'Enter' && updateURL(filters)}
@@ -156,7 +140,7 @@ function JobsListContent() {
              
              <button 
                onClick={() => setIsFilterSidebarOpen(true)}
-               className="md:hidden p-4 bg-blue-600 text-white rounded-2xl shadow-xl shadow-blue-500/20"
+               className="md:hidden p-4 bg-green-600 text-white rounded-2xl shadow-xl shadow-green-500/20"
              >
                 <SlidersHorizontal size={20} />
              </button>
@@ -169,30 +153,28 @@ function JobsListContent() {
                 <option value="newest">Sort: Newest First</option>
                 <option value="oldest">Sort: Oldest First</option>
                 <option value="views">Sort: Most Popular</option>
-                <option value="trending">Sort: Trending Now</option>
              </select>
           </div>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-12">
-          {/* Desktop Filter Sidebar */}
           <aside className="hidden lg:block w-72 shrink-0 space-y-10">
             <div className="sticky top-32 space-y-10">
                <div>
                  <div className="flex items-center justify-between mb-6">
                     <h3 className="text-xs font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                       <MapPin size={14} className="text-blue-600" /> Regional Filters
+                       <MapPin size={14} className="text-green-600" /> Filter by State
                     </h3>
-                    <button onClick={clearFilters} className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:underline">Clear</button>
+                    <button onClick={clearFilters} className="text-[10px] font-black text-green-600 uppercase tracking-widest hover:underline">Clear</button>
                  </div>
-                 <div className="max-h-64 overflow-y-auto custom-scrollbar space-y-1 pr-2">
+                 <div className="max-h-96 overflow-y-auto custom-scrollbar space-y-1 pr-2">
                     {states.map((st) => (
                        <button
                          key={st}
                          onClick={() => handleFilterChange('state', st)}
                          className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
                              (filters.state === st || (st === 'All India' && !filters.state)) 
-                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                             ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' 
                              : 'text-zinc-500 hover:bg-black/5 dark:hover:bg-white/5'
                          }`}
                        >
@@ -202,40 +184,17 @@ function JobsListContent() {
                  </div>
                </div>
 
-               <div>
-                 <h3 className="text-xs font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-                    <Briefcase size={14} className="text-blue-600" /> Sector Type
-                 </h3>
-                 <div className="space-y-2">
-                    {jobTypes.map((type) => (
-                       <button
-                         key={type}
-                         onClick={() => handleFilterChange('jobType', type)}
-                         className={`w-full text-left px-4 py-3 rounded-xl text-xs font-black transition-all border ${
-                             (filters.jobType === type || (type === 'All Types' && !filters.jobType)) 
-                             ? 'bg-blue-600 text-white border-transparent' 
-                             : 'bg-white dark:bg-zinc-900 border-black/5 dark:border-white/5 text-zinc-500'
-                         }`}
-                       >
-                         {type}
-                       </button>
-                    ))}
-                 </div>
-               </div>
-
-               <div className="p-8 bg-zinc-900 rounded-[32px] text-white overflow-hidden relative group">
-                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-600 rounded-full blur-[80px] group-hover:scale-150 transition-transform duration-700" />
-                  <div className="relative z-10">
-                     <TrendingUp className="text-blue-500 mb-4" size={32} />
-                     <h4 className="text-lg font-black uppercase tracking-tighter leading-tight mb-2">Join our Telegram</h4>
-                     <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-widest mb-6 leading-relaxed">Get instant alerts for every new govt vacancy across India.</p>
-                     <button className="w-full py-3 bg-white text-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all">Connect Now</button>
+               <div className="p-8 bg-green-600/10 border border-green-600/20 rounded-[32px] overflow-hidden relative group">
+                  <div className="relative z-10 text-center">
+                     <Trophy className="text-green-600 mx-auto mb-4" size={32} />
+                     <h4 className="text-lg font-black uppercase tracking-tighter leading-tight mb-2 dark:text-white">Success Stories</h4>
+                     <p className="text-[10px] uppercase font-bold text-zinc-500 dark:text-zinc-400 tracking-widest mb-6 leading-relaxed">Join 10,000+ candidates who found their dream job via SarkariSetu.</p>
+                     <button className="w-full py-3 bg-green-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-green-600/20">View Hall of Fame</button>
                   </div>
                </div>
             </div>
           </aside>
 
-          {/* Job Listing Grid */}
           <div className="flex-1">
             <AnimatePresence mode='wait'>
               {loading ? (
@@ -247,7 +206,7 @@ function JobsListContent() {
                   className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
                 >
                   {[1,2,3,4,5,6].map((i) => (
-                    <div key={i} className="h-[450px] bg-white dark:bg-zinc-900/40 rounded-[32px] border border-black/5 animate-pulse" />
+                    <div key={i} className="h-[400px] bg-white dark:bg-zinc-900/40 rounded-[32px] border border-black/5 animate-pulse" />
                   ))}
                 </motion.div>
               ) : error ? (
@@ -258,7 +217,7 @@ function JobsListContent() {
                    className="flex flex-col items-center justify-center py-32 text-center"
                  >
                     <AlertCircle size={64} className="text-red-500 mb-6" />
-                    <h3 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter">Transmission Error</h3>
+                    <h3 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter">System Error</h3>
                     <p className="text-zinc-500 font-medium max-w-xs mt-2">{error}</p>
                     <button onClick={() => window.location.reload()} className="mt-8 px-8 py-3 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-xl font-black uppercase tracking-widest text-[10px]">Try Refresh</button>
                  </motion.div>
@@ -272,9 +231,9 @@ function JobsListContent() {
                    <div className="w-24 h-24 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-[40px] flex items-center justify-center mb-8 shadow-2xl">
                       <FilterX size={40} className="text-zinc-300" />
                    </div>
-                   <h3 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter">No Matches Found</h3>
-                   <p className="text-zinc-500 font-medium max-w-sm mt-2">We couldn't find any listings matching your current criteria. Try resetting filters.</p>
-                   <button onClick={clearFilters} className="mt-8 px-10 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all">Clear All Filters</button>
+                   <h3 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tighter">No Results Found</h3>
+                   <p className="text-zinc-500 font-medium max-w-sm mt-2">No active results are available for the selected criteria at this moment.</p>
+                   <button onClick={clearFilters} className="mt-8 px-10 py-4 bg-green-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-green-500/20 hover:scale-105 active:scale-95 transition-all">Clear All Filters</button>
                 </motion.div>
               ) : (
                 <motion.div 
@@ -290,19 +249,18 @@ function JobsListContent() {
               )}
             </AnimatePresence>
 
-            {/* Pagination */}
             {!loading && totalPages > 1 && (
               <div className="mt-20 flex items-center justify-center gap-3">
                  <button 
                    disabled={filters.page === 1}
                    onClick={() => handleFilterChange('page', String(filters.page - 1))}
-                   className="w-14 h-14 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl flex items-center justify-center text-zinc-900 dark:text-white hover:bg-blue-600 hover:text-white disabled:opacity-30 disabled:hover:bg-white transition-all shadow-xl shadow-blue-500/5 group"
+                   className="w-14 h-14 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl flex items-center justify-center text-zinc-900 dark:text-white hover:bg-green-600 hover:text-white disabled:opacity-30 disabled:hover:bg-white transition-all shadow-xl shadow-green-500/5 group"
                  >
                     <ChevronLeft size={24} className="group-hover:-translate-x-1 transition-transform" />
                  </button>
                  
-                 <div className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/5">
-                    <span className="text-blue-600">{filters.page}</span>
+                 <div className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-green-500/5">
+                    <span className="text-green-600">{filters.page}</span>
                     <span className="opacity-20">/</span>
                     <span>{totalPages}</span>
                  </div>
@@ -310,7 +268,7 @@ function JobsListContent() {
                  <button 
                    disabled={filters.page === totalPages}
                    onClick={() => handleFilterChange('page', String(filters.page + 1))}
-                   className="w-14 h-14 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl flex items-center justify-center text-zinc-900 dark:text-white hover:bg-blue-600 hover:text-white disabled:opacity-30 disabled:hover:bg-white transition-all shadow-xl shadow-blue-500/5 group"
+                   className="w-14 h-14 bg-white dark:bg-zinc-900 border border-black/5 dark:border-white/5 rounded-2xl flex items-center justify-center text-zinc-900 dark:text-white hover:bg-green-600 hover:text-white disabled:opacity-30 disabled:hover:bg-white transition-all shadow-xl shadow-green-500/5 group"
                  >
                     <ChevronRight size={24} className="group-hover:translate-x-1 transition-transform" />
                  </button>
@@ -322,7 +280,6 @@ function JobsListContent() {
 
       <Footer />
       
-      {/* Mobile Filter Overlay */}
       <AnimatePresence>
         {isFilterSidebarOpen && (
           <>
@@ -357,21 +314,6 @@ function JobsListContent() {
                     </select>
                   </div>
 
-                  <div>
-                    <h3 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-6">Experience/Type</h3>
-                    <div className="grid grid-cols-1 gap-2">
-                      {jobTypes.map(t => (
-                        <button 
-                          key={t}
-                          onClick={() => { handleFilterChange('jobType', t); setIsFilterSidebarOpen(false); }}
-                          className={`p-4 rounded-xl text-left font-bold text-sm ${filters.jobType === t ? 'bg-blue-600 text-white' : 'bg-zinc-50 dark:bg-zinc-900 text-zinc-500'}`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   <button 
                     onClick={() => { clearFilters(); setIsFilterSidebarOpen(false); }}
                     className="w-full py-5 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-2xl text-zinc-400 font-black uppercase tracking-widest text-[10px]"
@@ -388,32 +330,28 @@ function JobsListContent() {
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(59, 130, 246, 0.2);
+          background: rgba(34, 197, 94, 0.2);
           border-radius: 10px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(59, 130, 246, 0.5);
-        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(34, 197, 94, 0.5); }
       `}</style>
     </div>
   );
 }
 
-export default function JobsPage() {
+export default function ResultsPage() {
   return (
     <Suspense fallback={
        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#0a0a0b]">
            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+              <Loader2 className="w-10 h-10 text-green-600 animate-spin" />
               <p className="text-xs font-black uppercase tracking-widest text-zinc-500">Initializing Engine...</p>
            </div>
        </div>
     }>
-      <JobsListContent />
+      <ResultsContent />
     </Suspense>
   );
 }

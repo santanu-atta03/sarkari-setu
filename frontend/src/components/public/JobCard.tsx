@@ -15,6 +15,9 @@ import {
   Users
 } from 'lucide-react';
 
+import Image from 'next/image';
+import api from '@/lib/api';
+
 interface JobCardProps {
   job: any;
   featured?: boolean;
@@ -49,8 +52,9 @@ export default function JobCard({ job, featured = false }: JobCardProps) {
       <div className="relative h-48 overflow-hidden group-hover:scale-[1.02] transition-transform duration-700">
         <div className="absolute inset-0 bg-gradient-to-t from-[#16161a] to-transparent z-[2]" />
         {job.featuredImage ? (
-           <img 
+           <Image
             src={job.featuredImage} 
+            fill
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
             alt={job.title}
            />
@@ -93,20 +97,59 @@ export default function JobCard({ job, featured = false }: JobCardProps) {
            )}
         </div>
 
-        <div className="mt-8 pt-6 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
-           <div className="flex flex-col">
-              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">Application Last Date</p>
-              <div className={`flex items-center gap-1.5 text-sm font-black ${isUrgent ? 'text-red-500 animate-pulse' : 'text-zinc-600 dark:text-white'}`}>
-                <Clock size={14} /> {deadline ? deadline.toLocaleDateString() : 'TBD'}
+        <div className="mt-8 pt-6 border-t border-black/5 dark:border-white/5 flex items-center justify-between gap-4">
+           <div className="flex flex-col flex-1">
+              <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">
+                {job.admitCardUrl ? 'Exam Date' : job.resultUrl ? 'Result Status' : 'Application Last Date'}
+              </p>
+              <div className={`flex items-center gap-1.5 text-sm font-black ${isUrgent && !job.resultUrl ? 'text-red-500 animate-pulse' : 'text-zinc-600 dark:text-white'}`}>
+                <Clock size={14} /> 
+                {job.admitCardUrl 
+                  ? (job.importantDates?.examDate ? new Date(job.importantDates.examDate).toLocaleDateString() : 'Announced')
+                  : job.resultUrl 
+                    ? 'Released' 
+                    : (deadline ? deadline.toLocaleDateString() : 'TBD')}
               </div>
            </div>
            
-           <Link 
-             href={`/jobs/${job.slug}`} 
-             className="w-12 h-12 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl group-hover:shadow-blue-600/20 sm:rotate-0"
-           >
-             <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-           </Link>
+           <div className="flex gap-2">
+             {job.admitCardUrl && (
+               <button 
+                 onClick={async (e) => {
+                   e.preventDefault();
+                   window.open(job.admitCardUrl, '_blank');
+                   try { await api.patch(`/jobs/${job._id}/download?type=admitCard`); } catch(err) { console.error(err); }
+                 }}
+                 className="px-4 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-600/20 text-xs font-black uppercase tracking-widest gap-2"
+                 title="Download Admit Card"
+               >
+                 <ArrowRight size={16} /> Admit
+               </button>
+             )}
+
+             {job.resultUrl && (
+               <button 
+                 onClick={async (e) => {
+                   e.preventDefault();
+                   window.open(job.resultUrl, '_blank');
+                   try { await api.patch(`/jobs/${job._id}/download?type=result`); } catch(err) { console.error(err); }
+                 }}
+                 className="px-4 h-12 bg-green-600 text-white rounded-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-lg shadow-green-600/20 text-xs font-black uppercase tracking-widest gap-2"
+                 title="Check Result"
+               >
+                 <ArrowRight size={16} /> Result
+               </button>
+             )}
+
+             {!job.admitCardUrl && !job.resultUrl && (
+               <Link 
+                 href={`/jobs/${job.slug}`} 
+                 className="w-12 h-12 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-xl group-hover:shadow-blue-600/20"
+               >
+                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+               </Link>
+             )}
+           </div>
         </div>
       </div>
     </motion.div>

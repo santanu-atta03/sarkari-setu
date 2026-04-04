@@ -54,7 +54,7 @@ const paginatedResponse = (res, { jobs, total, page, limit }) => {
  * List jobs with filtering, sorting, pagination, and full-text search.
  */
 exports.listJobs = async (req, res) => {
-  const { page, limit, sort, status, state, jobType, qualification, category, q, isTrending, isFeatured } = req.query;
+  const { page, limit, sort, status, state, jobType, qualification, category, q, isTrending, isFeatured, age } = req.query;
 
   // Build filter
   const filter = { status };
@@ -64,7 +64,31 @@ exports.listJobs = async (req, res) => {
   if (qualification) filter.qualification = qualification;
   if (category)      filter.category = new RegExp(category, 'i');
   if (isTrending !== undefined) filter.isTrending = isTrending;
-  if (isFeatured !== undefined) filter.isFeatured = isFeatured;
+  if (isFeatured !== undefined) filter.isFeatured = isFeatured === 'true';
+  if (req.query.hasAdmitCard === 'true') filter.admitCardUrl = { $ne: '' };
+  if (req.query.hasResult === 'true')    filter.resultUrl = { $ne: '' };
+
+  // Age Filtering Logic
+  if (age) {
+    const ageNum = parseInt(age, 10);
+    if (!isNaN(ageNum)) {
+      filter.$and = filter.$and || [];
+      filter.$and.push({
+        $or: [
+          { 'eligibility.minAge': { $lte: ageNum } },
+          { 'eligibility.minAge': null },
+          { 'eligibility.minAge': { $exists: false } },
+        ],
+      });
+      filter.$and.push({
+        $or: [
+          { 'eligibility.maxAge': { $gte: ageNum } },
+          { 'eligibility.maxAge': null },
+          { 'eligibility.maxAge': { $exists: false } },
+        ],
+      });
+    }
+  }
 
   // Full-text search (uses the text index)
   if (q) filter.$text = { $search: q };
@@ -279,3 +303,28 @@ exports.getAllSlugs = async (req, res) => {
 
   return res.json({ success: true, data: jobs });
 };
+
+/**
+ * PATCH /api/jobs/:id/download
+ * Increment download counts for admit card or result.
+ */
+exports.incrementDownload = async (req, res) => {
+  const { id } = req.params;
+  const { type } = req.query; // 'admitCard' or 'result'
+
+  if (!['admitCard', 'result'].includes(type)) {
+    return res.status(400).json({ success: false, message: 'Invalid download type' });
+  }
+
+  const updateField = type === 'admitCard' ? 'admitCardDownloadCount' : 'resultDownloadCount';
+  
+  const job = await Job.findByIdAndUpdate(id, { $inc: { [updateField]: 1 } }, { new: true });
+
+  if (!job) {
+    return res.status(404).json({ success: false, message: 'Job not found' });
+  }
+
+  return res.json({ success: true, data: { [updateField]: job[updateField] } });
+};
+
+module.exports = exports;

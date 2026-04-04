@@ -18,6 +18,7 @@ const mongoSanitize = require('express-mongo-sanitize');
 const jobRoutes = require('./routes/jobRoutes');
 const authRoutes = require('./routes/authRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const scraperRoutes = require('./routes/scraperRoutes');
 
 // Error handlers
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -99,6 +100,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/scraper', scraperRoutes);
 
 // ─── 404 + Global Error Handler ───────────────────────────────────────────────
 

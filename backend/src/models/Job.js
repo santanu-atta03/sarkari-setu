@@ -234,6 +234,19 @@ const JobSchema = new mongoose.Schema(
     applicationFee: ApplicationFeeSchema,
     vacancy: VacancySchema,
 
+    // ── Download Links ─────────────────────────────────────────────────────────
+    admitCardUrl: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+
+    resultUrl: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+
     // Salary range
     salaryMin: { type: Number, default: null },
     salaryMax: { type: Number, default: null },
@@ -308,6 +321,18 @@ const JobSchema = new mongoose.Schema(
       min: 0,
     },
 
+    admitCardDownloadCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    resultDownloadCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     bookmarkCount: {
       type: Number,
       default: 0,
@@ -331,6 +356,14 @@ const JobSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Admin',
       default: null,
+    },
+
+    // ── Scraping Metadata ─────────────────────────────────────────────────────
+    sourceUrl: {
+      type: String,
+      trim: true,
+      index: true,
+      // unique: true // Maybe not unique if multiple sources list the same URL, we'll check manually
     },
   },
   {

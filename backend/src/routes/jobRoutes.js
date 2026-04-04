@@ -19,7 +19,9 @@ const { protect } = require('../middleware/auth'); // Admin authentication
 // ─── Public Routes ─────────────────────────────────────────────────────────────
 
 router.get('/', jobController.listJobs);
+router.get('/slugs', jobController.getAllSlugs);
 router.get('/:identifier', jobController.getJob);
+router.patch('/:id/download', jobController.incrementDownload);
 
 // ─── Protected Admin Routes ──────────────────────────────────────────────────
 
