@@ -37,9 +37,9 @@ export default function JobCard({ job, featured = false }: JobCardProps) {
       }`}
     >
       <div className="absolute top-0 right-0 p-6 z-10 flex gap-2">
-        {job.isTrending && (
+        {job.trendingScore > 0 && (
           <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 px-3 py-1.5 rounded-full text-[10px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-1.5 shadow-xl">
-            <TrendingUp size={12} className="animate-pulse" /> Trending
+            <TrendingUp size={12} className="animate-pulse" /> Popular
           </div>
         )}
         {featured && (
@@ -111,6 +111,15 @@ export default function JobCard({ job, featured = false }: JobCardProps) {
                     : (deadline ? deadline.toLocaleDateString() : 'TBD')}
               </div>
            </div>
+
+           {job.viewCount > 0 && (
+             <div className="flex flex-col items-end shrink-0">
+                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none mb-1">Activity</p>
+                <div className="flex items-center gap-1 text-sm font-black text-blue-500 tracking-tighter">
+                   <Users size={14} /> {job.viewCount.toLocaleString()}
+                </div>
+             </div>
+           )}
            
            <div className="flex gap-2">
              {job.admitCardUrl && (

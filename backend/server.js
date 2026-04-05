@@ -10,6 +10,7 @@ require('dotenv').config();
 const app = require('./src/app');
 const connectDB = require('./src/config/db');
 const scraperService = require('./src/services/scraper/ScraperService');
+const trendingService = require('./src/services/trendingService');
 
 const PORT = process.env.PORT || 5000;
 
@@ -21,14 +22,29 @@ const startServer = async () => {
     console.log(`[Server] SarkariSetu API running on port ${PORT} [${process.env.NODE_ENV}]`);
     console.log(`[Server] Health: http://localhost:${PORT}/health`);
 
-    // ─── Scraper Service ─────────────────────────────────────────────────────
-    // Start scheduler for periodically fetching government jobs
     try {
       scraperService.schedule();
       console.log('[Server] Job scraper service initialized successfully');
     } catch (err) {
       console.error('[Server] Failed to initialize job scraper:', err.message);
     }
+
+    // ─── Trending Score Refresher ───────────────────────────────────────────
+    // Periodically update scores to account for time-decay gravity.
+    // Recommended: Every 4 to 6 hours.
+    const trendingInterval = parseInt(process.env.TRENDING_RECALC_INTERVAL_MS, 10) || 4 * 60 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        await trendingService.recalculateAllScores();
+      } catch (err) {
+        console.error('[Server] Trending score recalculation failed:', err.message);
+      }
+    }, trendingInterval);
+
+    // Initial run after server starts
+    setTimeout(() => {
+      trendingService.recalculateAllScores().catch(console.error);
+    }, 10_000);
   });
 
   // ─── Graceful Shutdown ──────────────────────────────────────────────────────

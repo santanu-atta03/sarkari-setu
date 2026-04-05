@@ -33,8 +33,8 @@ export default function HomePage() {
   useEffect(() => {
     const fetchTrending = async () => {
       try {
-        const resp = await api.get('/jobs', {
-          params: { limit: 6, status: 'published', isTrending: true }
+        const resp = await api.get('/jobs/trending', {
+          params: { limit: 6 }
         });
         setTrendingJobs(resp.data.data);
       } catch (err) {

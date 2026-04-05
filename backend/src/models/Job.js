@@ -345,6 +345,12 @@ const JobSchema = new mongoose.Schema(
       min: 0,
     },
 
+    trendingScore: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
+
     // ── Authorship ────────────────────────────────────────────────────────────
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -505,25 +511,63 @@ JobSchema.pre('findOneAndUpdate', function (next) {
 // ─── Static Methods ────────────────────────────────────────────────────────────
 
 /**
- * Find trending jobs by view count within last N days
+ * Find trending jobs by trendingScore
  */
-JobSchema.statics.findTrending = function (limit = 10, days = 7) {
-  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+JobSchema.statics.findTrending = function (limit = 10) {
   return this.find({
     status: 'published',
-    $or: [{ isTrending: true }, { viewCount: { $gte: 100 } }],
-    createdAt: { $gte: since },
   })
-    .sort({ viewCount: -1, createdAt: -1 })
+    .sort({ trendingScore: -1, publishedAt: -1 })
     .limit(limit)
-    .select('title slug organization state jobType qualification vacancy.total importantDates.applicationEnd featuredImage seo.metaDescription viewCount isTrending');
+    .select('title slug organization state jobType qualification vacancy.total importantDates.applicationEnd featuredImage seo.metaDescription viewCount isTrending trendingScore');
 };
 
 /**
- * Increment view count atomically
+ * Recalculate trending score for a job
+ * Formula: (Views * 1 + Downloads * 5 + Bookmarks * 10 + Shares * 2) / (Hours_Since_Published + 2)^1.5
  */
-JobSchema.statics.incrementViews = function (id) {
-  return this.findByIdAndUpdate(id, { $inc: { viewCount: 1 } }, { new: true });
+JobSchema.methods.calculateTrendingScore = function () {
+  const views = this.viewCount || 0;
+  const downloads = (this.admitCardDownloadCount || 0) + (this.resultDownloadCount || 0);
+  const bookmarks = this.bookmarkCount || 0;
+  const shares = this.shareCount || 0;
+
+  const publishedAt = this.publishedAt || this.createdAt;
+  const hoursSincePublished = Math.max(0, (Date.now() - publishedAt.getTime()) / (1000 * 60 * 60));
+
+  // The denominator adds 2 to avoid division by zero and dampen initial burst
+  // The exponent 1.5 is the gravity factor (higher = faster decay)
+  const score = (views * 1 + downloads * 5 + bookmarks * 10 + shares * 2) / Math.pow(hoursSincePublished + 2, 1.5);
+
+  this.trendingScore = score;
+  return score;
+};
+
+/**
+ * Increment view count atomically and recalculate trendingScore
+ */
+JobSchema.statics.incrementViews = async function (id) {
+  const job = await this.findById(id);
+  if (job) {
+    job.viewCount += 1;
+    job.calculateTrendingScore();
+    await job.save({ validateBeforeSave: false });
+  }
+  return job;
+};
+
+/**
+ * Increment download count and recalculate trendingScore
+ */
+JobSchema.statics.incrementDownload = async function (id, type) {
+  const updateField = type === 'admitCard' ? 'admitCardDownloadCount' : 'resultDownloadCount';
+  const job = await this.findById(id);
+  if (job) {
+    job[updateField] += 1;
+    job.calculateTrendingScore();
+    await job.save({ validateBeforeSave: false });
+  }
+  return job;
 };
 
 // ─── Instance Methods ──────────────────────────────────────────────────────────

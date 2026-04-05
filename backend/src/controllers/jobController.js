@@ -23,7 +23,7 @@ const buildSortQuery = (sort) => {
   switch (sort) {
     case 'oldest':    return { createdAt: 1 };
     case 'views':     return { viewCount: -1, createdAt: -1 };
-    case 'trending':  return { isTrending: -1, viewCount: -1, createdAt: -1 };
+    case 'trending':  return { trendingScore: -1, createdAt: -1 };
     default:          return { createdAt: -1 }; // newest
   }
 };
@@ -310,7 +310,7 @@ exports.getAllSlugs = async (req, res) => {
 
 /**
  * PATCH /api/jobs/:id/download
- * Increment download counts for admit card or result.
+ * Increment download counts and update trending score.
  */
 exports.incrementDownload = async (req, res) => {
   const { id } = req.params;
@@ -320,15 +320,14 @@ exports.incrementDownload = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Invalid download type' });
   }
 
-  const updateField = type === 'admitCard' ? 'admitCardDownloadCount' : 'resultDownloadCount';
-  
-  const job = await Job.findByIdAndUpdate(id, { $inc: { [updateField]: 1 } }, { new: true });
+  const job = await Job.incrementDownload(id, type);
 
   if (!job) {
     return res.status(404).json({ success: false, message: 'Job not found' });
   }
 
-  return res.json({ success: true, data: { [updateField]: job[updateField] } });
+  const updateField = type === 'admitCard' ? 'admitCardDownloadCount' : 'resultDownloadCount';
+  return res.json({ success: true, data: { [updateField]: job[updateField], trendingScore: job.trendingScore } });
 };
 
 module.exports = exports;
