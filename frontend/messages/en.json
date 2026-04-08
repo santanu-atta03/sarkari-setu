@@ -1,0 +1,38 @@
+{
+  "HomePage": {
+    "title_part1": "India's Most Trusted",
+    "title_part2": "Govt Job Portal",
+    "subtitle": "Get instant, verified updates from 1,000+ government departments. Real-time notifications, direct apply links, and comprehensive preparation resources.",
+    "search_placeholder": "E.g. SSC CGL 2026, Delhi Police, Railway MTS...",
+    "start_search": "Start Search",
+    "popular_searches": "Popular Searches:",
+    "active_jobs": "Active Jobs",
+    "daily_visitors": "Daily Visitors",
+    "states_covered": "States Covered",
+    "verified_sources": "Verified Sources",
+    "browse_category_title": "Browse by Category",
+    "browse_category_subtitle": "Segmented job listings for easier discovery.",
+    "view_all_archives": "View All Archives",
+    "global_trending": "Global Trending",
+    "global_trending_subtitle": "Based on real-time application metrics",
+    "view_trending_full": "View Trending Full Map",
+    "no_trending": "No trending items in the current cycle.",
+    "engineered_for_success": "Engineered for Your Success Journey.",
+    "sarkari_engine_desc": "SarkariSetu isn't just a job portal; it's a dedicated engine designed to save you time and eliminate the complexity of searching for government opportunities.",
+    "direct_verification": "Direct Verification",
+    "direct_verification_desc": "Every listing is cross-checked with the official Gazette of India and state portals.",
+    "instant_alerts": "Instant Alert Engine",
+    "instant_alerts_desc": "Be the first to know about new vacancies with our low-latency notification system.",
+    "join_aspirants": "Join 50K+ Aspirants"
+  },
+  "Navbar": {
+    "jobs": "Jobs",
+    "admit_cards": "Admit Cards",
+    "results": "Results",
+    "daily_bites": "Daily Bites",
+    "tools": "Tools",
+    "admin": "Admin",
+    "sign_in": "Sign In",
+    "dashboard": "Dashboard"
+  }
+}

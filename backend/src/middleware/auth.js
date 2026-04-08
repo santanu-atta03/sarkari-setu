@@ -7,6 +7,7 @@
 
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const User = require('../models/User');
 
 /**
  * Verifies the Bearer JWT in the Authorization header.
@@ -63,5 +64,40 @@ exports.restrict = (...roles) => (req, res, next) => {
       message: `Access denied. Required role: ${roles.join(' or ')}`,
     });
   }
+  return next();
+};
+
+/**
+ * Verifies the Bearer JWT for public users.
+ * Attaches `req.user` with decoded token payload.
+ */
+exports.protectUser = async (req, res, next) => {
+  let token;
+
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return res.status(401).json({ success: false, message: 'No token provided. Please log in.' });
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    const message =
+      err.name === 'TokenExpiredError'
+        ? 'Session expired. Please log in again.'
+        : 'Invalid token. Please log in.';
+    return res.status(401).json({ success: false, message });
+  }
+
+  const user = await User.findById(decoded.id);
+  if (!user || !user.isActive) {
+    return res.status(401).json({ success: false, message: 'User account not found or disabled.' });
+  }
+
+  req.user = { id: user._id, email: user.email, role: 'user' };
   return next();
 };

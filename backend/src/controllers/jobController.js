@@ -330,4 +330,32 @@ exports.incrementDownload = async (req, res) => {
   return res.json({ success: true, data: { [updateField]: job[updateField], trendingScore: job.trendingScore } });
 };
 
+/**
+ * PATCH /api/jobs/:id/activity
+ * Increment metrics like 'bookmarkCount' or 'shareCount'.
+ */
+exports.handleActivity = async (req, res) => {
+  const { id } = req.params;
+  const { type } = req.query; // 'bookmark' or 'share'
+
+  const validTypes = {
+    bookmark: 'bookmarkCount',
+    share: 'shareCount',
+  };
+
+  const field = validTypes[type];
+  if (!field) {
+    return res.status(400).json({ success: false, message: 'Invalid activity type' });
+  }
+
+  const job = await Job.findById(id);
+  if (!job) return res.status(404).json({ success: false, message: 'Job not found' });
+
+  job[field] += 1;
+  job.calculateTrendingScore();
+  await job.save({ validateBeforeSave: false });
+
+  return res.json({ success: true, data: { [field]: job[field], trendingScore: job.trendingScore } });
+};
+
 module.exports = exports;

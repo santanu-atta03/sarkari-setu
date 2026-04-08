@@ -6,44 +6,24 @@
  */
 
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+dotenv.config();
 
-let isConnected = false;
-
-const connectDB = async () => {
-  if (isConnected) return;
-
-  const uri = process.env.MONGO_URI;
-  if (!uri) {
-    console.error('[DB] MONGO_URI is not defined in environment variables');
-    process.exit(1);
-  }
-
+const dbConnect = async () => {
   try {
-    const conn = await mongoose.connect(uri, {
-      // Connection pool
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-    });
-
-    isConnected = true;
-    console.log(`[DB] MongoDB connected: ${conn.connection.host}/${conn.connection.name}`);
-
-    // Handle connection events
-    mongoose.connection.on('disconnected', () => {
-      isConnected = false;
-      console.warn('[DB] MongoDB disconnected');
-    });
-
-    mongoose.connection.on('reconnected', () => {
-      isConnected = true;
-      console.log('[DB] MongoDB reconnected');
-    });
-
-  } catch (err) {
-    console.error('[DB] Connection failed:', err.message);
-    process.exit(1);
+    await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
+    console.log("✅ Connected to MongoDB");
+  } catch (error) {
+    console.error("\n=============================================");
+    console.error("❌ MONGODB CONNECTION FAILED ❌");
+    console.error("=============================================");
+    console.error("This is causing the 500 Errors on the Frontend!");
+    console.error("Your ISP (Jio/Airtel) or WiFi is blocking MongoDB.");
+    console.error("FIX: Connect your PC to a Mobile Hotspot temporarily.");
+    console.error("=============================================\n");
+    console.error(error.message);
+    // Don't process.exit(1) — safe for serverless platforms like Render
   }
 };
 
-module.exports = connectDB;
+module.exports = dbConnect;

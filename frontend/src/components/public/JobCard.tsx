@@ -12,7 +12,9 @@ import {
   Zap,
   Clock,
   ExternalLink,
-  Users
+  Users,
+  Bookmark,
+  Share2
 } from 'lucide-react';
 
 import Image from 'next/image';
@@ -26,6 +28,26 @@ interface JobCardProps {
 export default function JobCard({ job, featured = false }: JobCardProps) {
   const deadline = job.importantDates?.applicationEnd ? new Date(job.importantDates.applicationEnd) : null;
   const isUrgent = deadline && (deadline.getTime() - Date.now()) < (5 * 24 * 60 * 60 * 1000); // 5 days
+  const [bookmarked, setBookmarked] = React.useState(false);
+
+  const handleActivity = async (e: React.MouseEvent, type: 'bookmark' | 'share') => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (type === 'bookmark') setBookmarked(!bookmarked);
+    
+    try {
+      await api.patch(`/jobs/${job._id}/activity?type=${type}`);
+      if (type === 'share' && navigator.share) {
+        navigator.share({
+          title: job.title,
+          text: job.shortDescription,
+          url: `${window.location.origin}/jobs/${job.slug}`
+        }).catch(() => {});
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <motion.div
@@ -36,7 +58,26 @@ export default function JobCard({ job, featured = false }: JobCardProps) {
         featured ? 'ring-2 ring-blue-500/20' : ''
       }`}
     >
-      <div className="absolute top-0 right-0 p-6 z-10 flex gap-2">
+      <div className="absolute top-0 right-0 p-6 z-30 flex items-center gap-3">
+        <div className="flex gap-2 mr-2">
+           <button 
+             onClick={(e) => handleActivity(e, 'bookmark')}
+             className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md border transition-all ${
+               bookmarked 
+               ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-600/40' 
+               : 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+             }`}
+           >
+             <Bookmark size={18} fill={bookmarked ? 'currentColor' : 'none'} />
+           </button>
+           <button 
+             onClick={(e) => handleActivity(e, 'share')}
+             className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 backdrop-blur-md border border-white/10 text-white/60 hover:bg-white/10 hover:text-white transition-all"
+           >
+             <Share2 size={18} />
+           </button>
+        </div>
+
         {job.trendingScore > 0 && (
           <div className="bg-orange-500/10 backdrop-blur-md border border-orange-500/20 px-3 py-1.5 rounded-full text-[10px] font-black text-orange-400 uppercase tracking-widest flex items-center gap-1.5 shadow-xl">
             <TrendingUp size={12} className="animate-pulse" /> Popular

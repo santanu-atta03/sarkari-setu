@@ -19,6 +19,9 @@ const jobRoutes = require('./routes/jobRoutes');
 const authRoutes = require('./routes/authRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const scraperRoutes = require('./routes/scraperRoutes');
+const userProfileRoutes = require('./routes/userProfileRoutes');
+const engagementRoutes = require('./routes/engagementRoutes');
+const communityRoutes = require('./routes/communityRoutes');
 
 // Error handlers
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -98,9 +101,12 @@ app.get('/health', (req, res) => {
 // ─── API Routes ───────────────────────────────────────────────────────────────
 
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/users', userProfileRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/scraper', scraperRoutes);
+app.use('/api/engagement', engagementRoutes);
+app.use('/api/community', communityRoutes);
 
 // ─── 404 + Global Error Handler ───────────────────────────────────────────────
 

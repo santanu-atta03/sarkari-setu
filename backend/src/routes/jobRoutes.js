@@ -21,9 +21,11 @@ const { cacheMiddleware, clearCache } = require('../middleware/cache');
 
 // Cache GET requests for 5 minutes (300s)
 router.get('/', cacheMiddleware(300), jobController.listJobs);
+router.get('/trending', cacheMiddleware(300), jobController.getTrending); // Add trending route here
 router.get('/slugs', cacheMiddleware(3600), jobController.getAllSlugs); // Cache slugs longer (1hr)
 router.get('/:identifier', cacheMiddleware(600), jobController.getJob); // Cache single job for 10 min
 router.patch('/:id/download', jobController.incrementDownload);
+router.patch('/:id/activity', jobController.handleActivity); // Add share/bookmark handler
 
 // ─── Protected Admin Routes ──────────────────────────────────────────────────
 

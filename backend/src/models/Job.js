@@ -398,6 +398,7 @@ JobSchema.index(
 
 // Compound index for common list queries
 JobSchema.index({ status: 1, createdAt: -1 });
+JobSchema.index({ status: 1, trendingScore: -1, publishedAt: -1 }); // Optimized for Trending
 JobSchema.index({ status: 1, isTrending: -1, viewCount: -1 });
 JobSchema.index({ status: 1, state: 1, createdAt: -1 });
 JobSchema.index({ status: 1, jobType: 1, createdAt: -1 });
@@ -519,7 +520,7 @@ JobSchema.statics.findTrending = function (limit = 10) {
   })
     .sort({ trendingScore: -1, publishedAt: -1 })
     .limit(limit)
-    .select('title slug organization state jobType qualification vacancy.total importantDates.applicationEnd featuredImage seo.metaDescription viewCount isTrending trendingScore');
+    .select('title slug organization state jobType qualification vacancy.total importantDates.applicationEnd admitCardUrl resultUrl featuredImage seo.metaDescription viewCount isTrending trendingScore');
 };
 
 /**

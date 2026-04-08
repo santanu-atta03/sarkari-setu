@@ -5,6 +5,7 @@ import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import JobCard from '@/components/public/JobCard';
 import api from '@/lib/api';
+import { useTranslations } from 'next-intl';
 import { 
   Search, 
   TrendingUp, 
@@ -26,6 +27,7 @@ import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const router = useRouter();
+  const t = useTranslations('HomePage');
   const [trendingJobs, setTrendingJobs] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -63,10 +65,10 @@ export default function HomePage() {
   ];
 
   const stats = [
-    { label: 'Active Jobs', value: '4,500+', icon: FileText },
-    { label: 'Daily Visitors', value: '25K+', icon: Users },
-    { label: 'States Covered', value: '28', icon: Globe },
-    { label: 'Verified Sources', value: '100%', icon: ShieldCheck },
+    { label: t('active_jobs'), value: '4,500+', icon: FileText },
+    { label: t('daily_visitors'), value: '25K+', icon: Users },
+    { label: t('states_covered'), value: '28', icon: Globe },
+    { label: t('verified_sources'), value: '100%', icon: ShieldCheck },
   ];
 
   return (
@@ -97,9 +99,9 @@ export default function HomePage() {
                    transition={{ delay: 0.1 }}
                    className="text-6xl md:text-8xl font-black text-zinc-900 dark:text-white tracking-tighter leading-[0.95] mb-10"
                  >
-                    India's Most Trusted <br />
+                    {t('title_part1')} <br />
                     <span className="text-blue-600 relative">
-                       Govt Job Portal
+                       {t('title_part2')}
                        <div className="absolute -bottom-2 left-0 w-full h-4 bg-blue-600/10 -skew-x-12 -z-10" />
                     </span>
                  </motion.h1>
@@ -110,8 +112,7 @@ export default function HomePage() {
                    transition={{ delay: 0.2 }}
                    className="text-xl md:text-2xl text-zinc-500 font-medium leading-relaxed max-w-2xl mb-14"
                  >
-                    Get instant, verified updates from 1,000+ government departments. 
-                    Real-time notifications, direct apply links, and comprehensive preparation resources.
+                    {t('subtitle')}
                  </motion.p>
 
                  <motion.form 
@@ -125,7 +126,7 @@ export default function HomePage() {
                        <Search className="text-zinc-600 group-focus-within:text-blue-500 transition-colors" size={24} />
                        <input 
                          type="text" 
-                         placeholder="E.g. SSC CGL 2026, Delhi Police, Railway MTS..." 
+                         placeholder={t('search_placeholder')} 
                          value={searchQuery}
                          onChange={(e) => setSearchQuery(e.target.value)}
                          className="flex-1 bg-transparent border-none text-white text-lg font-bold placeholder:text-zinc-700 focus:outline-none transition-all py-4"
@@ -135,7 +136,7 @@ export default function HomePage() {
                        type="submit"
                        className="md:w-56 py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-[32px] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-blue-600/20"
                     >
-                       Start Search <ArrowRight size={18} />
+                       {t('start_search')} <ArrowRight size={18} />
                     </button>
                  </motion.form>
 
@@ -175,11 +176,11 @@ export default function HomePage() {
            <div className="max-w-7xl mx-auto px-8">
               <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-8 text-center md:text-left">
                  <div>
-                    <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter">Browse by Category</h2>
-                    <p className="text-zinc-500 mt-4 text-lg font-medium">Segmented job listings for easier discovery.</p>
+                    <h2 className="text-4xl md:text-5xl font-black text-zinc-900 dark:text-white tracking-tighter">{t('browse_category_title')}</h2>
+                    <p className="text-zinc-500 mt-4 text-lg font-medium">{t('browse_category_subtitle')}</p>
                  </div>
                  <Link href="/jobs" className="px-8 py-4 border border-black/5 dark:border-white/5 bg-zinc-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-105 active:scale-95 transition-all shadow-xl">
-                   View All Archives
+                   {t('view_all_archives')}
                  </Link>
               </div>
 
@@ -239,7 +240,7 @@ export default function HomePage() {
               
               {!loading && trendingJobs.length === 0 && (
                 <div className="py-20 text-center">
-                   <p className="text-zinc-600 font-black uppercase tracking-widest text-sm">No trending items in the current cycle.</p>
+                   <p className="text-zinc-600 font-black uppercase tracking-widest text-sm">{t('no_trending')}</p>
                 </div>
               )}
            </div>
@@ -276,15 +277,15 @@ export default function HomePage() {
                     <span className="text-xs font-black text-blue-600 uppercase tracking-[0.4em]">Integrated Intelligence</span>
                  </div>
                  <h2 className="text-5xl md:text-7xl font-black text-zinc-900 dark:text-white tracking-tighter leading-[0.9] mb-12">
-                   Engineered for Your Success Journey.
+                   {t('engineered_for_success')}
                  </h2>
                  <p className="text-xl text-zinc-500 font-medium leading-relaxed mb-12">
-                    SarkariSetu isn't just a job portal; it's a dedicated engine designed to save you time and eliminate the complexity of searching for government opportunities.
+                    {t('sarkari_engine_desc')}
                  </p>
                  <div className="space-y-8">
                     {[
-                      { icon: ShieldCheck, title: 'Direct Verification', desc: 'Every listing is cross-checked with the official Gazette of India and state portals.' },
-                      { icon: Zap, title: 'Instant Alert Engine', desc: 'Be the first to know about new vacancies with our low-latency notification system.' },
+                      { icon: ShieldCheck, title: t('direct_verification'), desc: t('direct_verification_desc') },
+                      { icon: Zap, title: t('instant_alerts'), desc: t('instant_alerts_desc') },
                     ].map((item, i) => (
                       <div key={i} className="flex gap-6">
                          <div className="w-12 h-12 bg-blue-600/10 rounded-2xl flex items-center justify-center text-blue-600 shrink-0 shadow-lg">
@@ -298,7 +299,7 @@ export default function HomePage() {
                     ))}
                  </div>
                  <button className="mt-8 px-10 py-5 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-3xl font-black uppercase tracking-widest text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl shadow-blue-600/10">
-                    Join 50K+ Aspirants
+                    {t('join_aspirants')}
                  </button>
               </div>
            </div>

@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const logger = require('../../config/logger');
 const RssScraper = require('./sources/RssScraper');
 const GenericHtmlScraper = require('./sources/GenericHtmlScraper');
+const GenericApiScraper = require('./sources/GenericApiScraper');
 
 const sources = [
   {
@@ -14,6 +15,24 @@ const sources = [
       jobType: 'Other',
       qualification: 'Any',
     },
+  },
+  {
+    name: 'Public Job Board (API)',
+    url: 'https://arbeitnow.com/api/job-board-api', // Real-time JSON API example
+    type: 'api',
+    dataPath: 'data', // The array is under 'data' key in response
+    fieldMapping: {
+      title: 'title',
+      url: 'url',
+      description: 'description',
+      organization: 'company_name',
+      category: 'job_types.0', // Array access
+      state: 'location',
+    },
+    defaultFields: {
+      jobType: 'Other',
+      qualification: 'Any'
+    }
   },
   {
     name: 'Staff Selection Commission (HTML)',
@@ -41,6 +60,8 @@ class ScraperService {
         return new RssScraper(source);
       } else if (source.type === 'html') {
         return new GenericHtmlScraper(source);
+      } else if (source.type === 'api') {
+        return new GenericApiScraper(source);
       }
       return null;
     }).filter(Boolean);

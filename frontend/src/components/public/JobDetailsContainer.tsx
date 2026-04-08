@@ -6,7 +6,9 @@ import Navbar from '@/components/public/Navbar';
 import Footer from '@/components/public/Footer';
 import DOMPurify from 'dompurify';
 import JobCard from '@/components/public/JobCard';
+import CommunitySection from '@/components/public/CommunitySection';
 import api from '@/lib/api';
+import toast from 'react-hot-toast';
 import { 
   ArrowLeft, 
   Share2, 
@@ -118,6 +120,22 @@ export default function JobDetailsContainer({ job }: JobDetailsContainerProps) {
       )
     }
   ];
+
+  const handleSaveToRegistry = async () => {
+    try {
+      const resp = await api.post(`/users/applications/${job._id}`);
+      if (resp.data.success) {
+        toast.success('Job saved to your Exam Tracker!');
+      }
+    } catch (err: any) {
+      if (err.response?.status === 401) {
+        toast.error('Please log in to save jobs.');
+        router.push('/login'); // Assuming there's a user login route, or handle gracefully
+      } else {
+        toast.error(err.response?.data?.message || 'Failed to save job');
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#0a0a0b] flex flex-col font-sans transition-colors duration-500">
@@ -242,7 +260,10 @@ export default function JobDetailsContainer({ job }: JobDetailsContainerProps) {
                          </button>
                        )}
 
-                       <button className="w-full py-5 bg-zinc-100 dark:bg-white/[0.05] text-zinc-900 dark:text-white rounded-3xl flex items-center justify-center gap-2 hover:bg-zinc-200 dark:hover:bg-white/10 active:scale-95 transition-all font-black uppercase tracking-widest text-[10px]">
+                       <button 
+                         onClick={handleSaveToRegistry}
+                         className="w-full py-5 bg-zinc-100 dark:bg-white/[0.05] text-zinc-900 dark:text-white rounded-3xl flex items-center justify-center gap-2 hover:bg-zinc-200 dark:hover:bg-white/10 active:scale-95 transition-all font-black uppercase tracking-widest text-[10px]"
+                       >
                          <Bookmark size={20} /> Save to Registry
                        </button>
                     </div>
@@ -315,6 +336,9 @@ export default function JobDetailsContainer({ job }: JobDetailsContainerProps) {
                     </div>
                  ))}
               </section>
+
+              {/* Community & Discussion Forum */}
+              <CommunitySection jobId={job._id} />
            </div>
 
            {/* Sidebar Actions & Related Items */}
