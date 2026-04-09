@@ -108,6 +108,9 @@ const UserSchema = new mongoose.Schema(
         default: '',
       },
       state: { type: String, trim: true, default: '' },
+      profession: { type: String, trim: true, default: '' },
+      preferredJobType: { type: String, trim: true, default: '' },
+      preparingFor: { type: String, trim: true, default: '' },
       physicalStats: {
         heightCm: { type: Number, default: null },
         weightKg: { type: Number, default: null },

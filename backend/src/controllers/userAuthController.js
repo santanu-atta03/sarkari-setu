@@ -33,11 +33,13 @@ exports.sendOTP = async (req, res) => {
   } else {
     // For new users, we will create them when OTP is verified
     // Actually, let's create a placeholder user to store the OTP
+    const seed = Math.random().toString(36).substring(7);
     user = await User.create({
       name: email.split('@')[0],
       email: email.toLowerCase(),
       otp,
       otpExpiresAt,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9`,
       // No password for OTP users
     });
   }

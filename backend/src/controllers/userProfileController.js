@@ -27,15 +27,20 @@ exports.getProfile = async (req, res) => {
  * @access  Private (User)
  */
 exports.updateProfile = async (req, res) => {
-  const { profile } = req.body;
+  const { name, avatar, profile } = req.body;
   
-  if (!profile) {
-    return res.status(400).json({ success: false, message: 'Profile data is required' });
+  const updateData = {};
+  if (name) updateData.name = name;
+  if (avatar) updateData.avatar = avatar;
+  if (profile) updateData.profile = profile;
+
+  if (Object.keys(updateData).length === 0) {
+    return res.status(400).json({ success: false, message: 'No data provided for update' });
   }
 
   const user = await User.findByIdAndUpdate(
     req.user.id,
-    { $set: { profile } },
+    { $set: updateData },
     { new: true, runValidators: true }
   );
 
@@ -80,6 +85,22 @@ exports.getEligibleJobs = async (req, res) => {
     status: 'published',
     qualification: { $in: [qualification, 'Any'] }
   };
+
+  // Filter by preferredJobType if set and not "Any"
+  if (user.profile.preferredJobType && user.profile.preferredJobType !== 'Any') {
+    let jobTypeFilter = user.profile.preferredJobType;
+    
+    // Mapping for combined labels
+    if (jobTypeFilter === 'Defence/Police') {
+      matchQuery.jobType = { $in: ['Defence', 'Police'] };
+    } else if (jobTypeFilter === 'Banking Sector') {
+      matchQuery.jobType = 'Banking';
+    } else if (jobTypeFilter === 'Public Sector (PSUs)') {
+      matchQuery.jobType = 'PSU';
+    } else {
+      matchQuery.jobType = jobTypeFilter;
+    }
+  }
 
   // Build age query carefully; assume jobs without age limits naturally match
   matchQuery.$and = [
