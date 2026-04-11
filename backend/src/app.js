@@ -22,6 +22,9 @@ const scraperRoutes = require('./routes/scraperRoutes');
 const userProfileRoutes = require('./routes/userProfileRoutes');
 const engagementRoutes = require('./routes/engagementRoutes');
 const communityRoutes = require('./routes/communityRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const jobExtractRoutes = require('./routes/jobExtractRoutes');
 
 // Error handlers
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -107,6 +110,9 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/scraper', scraperRoutes);
 app.use('/api/engagement', engagementRoutes);
 app.use('/api/community', communityRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/extract', jobExtractRoutes);
 
 // ─── 404 + Global Error Handler ───────────────────────────────────────────────
 

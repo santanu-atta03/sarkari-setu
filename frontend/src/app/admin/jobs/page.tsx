@@ -24,6 +24,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import Modal from '@/components/admin/Modal';
 
 export default function ManageJobsPage() {
   const router = useRouter();
@@ -33,11 +35,17 @@ export default function ManageJobsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<'confirm_delete' | 'info'>('info');
+  const [modalContent, setModalContent] = useState({ title: '', message: '' });
+  const [pendingJobAction, setPendingJobAction] = useState<string | null>(null);
 
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const resp = await api.get('/jobs', {
+      const resp = await api.get('/admin/jobs', {
         params: {
           page,
           limit: 10,
@@ -64,14 +72,27 @@ export default function ManageJobsPage() {
     fetchJobs();
   };
 
-  const deleteJob = async (id: string) => {
-    if (!window.confirm('Are you sure you want to permanently delete this job post? This action cannot be undone.')) return;
-    
+  const triggerDelete = (id: string) => {
+    setPendingJobAction(id);
+    setModalType('confirm_delete');
+    setModalContent({
+      title: 'Confirm Deletion',
+      message: 'Are you sure you want to permanently delete this job post? This action will remove all associated data and cannot be reversed.'
+    });
+    setIsModalOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!pendingJobAction) return;
     try {
-      await api.delete(`/jobs/${id}`);
+      await api.delete(`/jobs/${pendingJobAction}`);
+      toast.success('Record purged successfully');
       fetchJobs();
     } catch (err) {
-      alert('Failed to delete job post.');
+      toast.error('Failed to delete registry entry');
+    } finally {
+      setIsModalOpen(false);
+      setPendingJobAction(null);
     }
   };
 
@@ -79,9 +100,15 @@ export default function ManageJobsPage() {
     try {
       const newStatus = job.status === 'published' ? 'draft' : 'published';
       await api.patch(`/jobs/${job._id}`, { status: newStatus });
+      toast.success(`Position ${newStatus === 'published' ? 'activated' : 'deactivated'}`);
       fetchJobs();
     } catch (err) {
-      alert('Failed to toggle status.');
+      setModalType('info');
+      setModalContent({
+        title: 'Command Failed',
+        message: 'Unable to update position lifecycle status. Please check your permissions.'
+      });
+      setIsModalOpen(true);
     }
   };
 
@@ -277,7 +304,7 @@ export default function ManageJobsPage() {
                              <Edit2 className="w-4 h-4" />
                            </button>
                            <button 
-                              onClick={() => deleteJob(job._id)}
+                              onClick={() => triggerDelete(job._id)}
                               className="p-3 bg-white/5 border border-white/5 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all"
                               title="Purge Record"
                            >
@@ -316,6 +343,31 @@ export default function ManageJobsPage() {
           )}
         </AnimatePresence>
       </div>
+
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title={modalContent.title}
+        maxWidth={modalType === 'confirm_delete' ? 'max-w-sm' : 'max-w-md'}
+      >
+        <p className="leading-relaxed text-gray-400">{modalContent.message}</p>
+        <div className="mt-8 flex justify-end gap-3">
+          <button 
+            onClick={() => setIsModalOpen(false)}
+            className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl text-sm font-medium transition-all"
+          >
+            {modalType === 'confirm_delete' ? 'Cancel' : 'Dismiss'}
+          </button>
+          {modalType === 'confirm_delete' && (
+            <button 
+              onClick={executeDelete}
+              className="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-bold shadow-lg shadow-red-900/20 transition-all"
+            >
+              Confirm Purge
+            </button>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

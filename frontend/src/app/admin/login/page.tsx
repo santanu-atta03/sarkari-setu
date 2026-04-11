@@ -15,10 +15,17 @@ export default function AdminLoginPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Check if already logged in
+    // Check if already logged in as ADMIN
     const token = localStorage.getItem('sarkari_token');
-    if (token) {
-      router.push('/admin/dashboard');
+    const adminStr = localStorage.getItem('admin_user');
+    if (token && adminStr) {
+      try {
+        // Validate it's actually an admin object
+        JSON.parse(adminStr);
+        router.push('/admin/dashboard');
+      } catch (e) {
+        // Invalid state, stay on login
+      }
     }
   }, [router]);
 

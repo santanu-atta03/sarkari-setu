@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import axios from 'axios';
 import api from '@/lib/api';
 import { 
   Save, 
@@ -19,9 +20,15 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Sparkles,
+  Wand2,
+  Link as LinkIcon,
+  AlignLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import Modal from '@/components/admin/Modal';
 
 // Dynamically import ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import('react-quill-new'), { 
@@ -40,6 +47,13 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
   const [activeTab, setActiveTab] = useState('basic');
   const [loading, setLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContent, setModalContent] = useState({ title: '', message: '' });
+  
+  // AI Section State
+  const [aiInput, setAiInput] = useState({ url: '', text: '' });
+  const [isAiExtracting, setIsAiExtracting] = useState(false);
+  const [aiMode, setAiMode] = useState<'url' | 'text'>('url');
   
   // State management for the complex Job model
   const [formData, setFormData] = useState<any>(initialData || {
@@ -124,15 +138,96 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
     uploadData.append('image', file);
 
     try {
-      const response = await api.post('/upload/image', uploadData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      const token = typeof window !== 'undefined' ? localStorage.getItem('sarkari_token') : null;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      
+      const response = await axios.post(`${apiUrl}/upload/image`, uploadData, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       setFormData((prev: any) => ({ ...prev, featuredImage: response.data.data.url }));
     } catch (err) {
       console.error('Upload failed', err);
-      alert('Failed to upload image. Make sure Cloudinary keys are set in backend.');
+      setModalContent({
+        title: 'Upload Failed',
+        message: 'Could not upload the image. Please verify your server configuration.'
+      });
+      setIsModalOpen(true);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleAIExtract = async () => {
+    if (!aiInput.url && !aiInput.text) {
+      toast.error('Please provide a URL or paste text to extract from');
+      return;
+    }
+    
+    setIsAiExtracting(true);
+    const toastId = toast.loading('AI is analyzing the notification...');
+    
+    try {
+      let dataToMerge = null;
+
+      if (aiMode === 'url') {
+        // Advanced Pipeline using Background Queue
+        const startRes = await api.post('/extract/start', { url: aiInput.url });
+        const { trackingId } = startRes.data;
+        
+        let status = 'pending';
+        while (status === 'pending' || status === 'processing') {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          const checkRes = await api.get(`/extract/${trackingId}`);
+          status = checkRes.data.data.status;
+          
+          if (status === 'completed') {
+            dataToMerge = checkRes.data.data.resultData;
+          } else if (status === 'failed') {
+            throw new Error(checkRes.data.data.errorMessage || 'Extraction failed on server.');
+          }
+        }
+      } else {
+        // Direct synchronous pipeline for raw text
+        const response = await api.post('/ai/extract-job', { text: aiInput.text });
+        dataToMerge = response.data.data;
+      }
+      
+      if (dataToMerge) {
+        setFormData((prev: any) => ({
+          ...prev,
+          ...dataToMerge,
+          eligibility: {
+            ...prev.eligibility,
+            ...dataToMerge.eligibility
+          },
+          importantDates: {
+            ...prev.importantDates,
+            ...dataToMerge.importantDates
+          },
+          applicationFee: {
+            ...prev.applicationFee,
+            ...dataToMerge.applicationFee
+          },
+          vacancy: {
+            ...prev.vacancy,
+            ...dataToMerge.vacancy
+          },
+          seo: {
+            ...prev.seo,
+            ...dataToMerge.seo
+          }
+        }));
+        
+        toast.success('Job details extracted successfully!', { id: toastId });
+        toast('Please review the auto-filled data before saving.', { icon: '🤖' });
+      }
+    } catch (err: any) {
+      console.error('AI Extraction failed', err);
+      toast.error(err.response?.data?.message || err.message || 'Failed to extract data. Please manually enter details.', { id: toastId });
+    } finally {
+      setIsAiExtracting(false);
     }
   };
 
@@ -148,9 +243,13 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
       }
       router.push('/admin/jobs');
       router.refresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Submission failed', err);
-      alert('Error saving job. Please check all required fields.');
+      setModalContent({
+        title: 'Validation Error',
+        message: err.response?.data?.message || 'There was an issue saving this job post. Please ensure all mandatory fields are correctly filled.'
+      });
+      setIsModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -192,6 +291,71 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
           </button>
         </div>
       </div>
+
+      {/* AI Extraction Panel */}
+      {!isEdit && (
+        <div className="bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-transparent border-b border-white/5 p-6 md:px-8">
+          <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
+            
+            <div className="flex-shrink-0">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-5 h-5 text-blue-400" />
+                <h3 className="text-white font-bold text-lg">AI Auto-Fill</h3>
+              </div>
+              <p className="text-gray-400 text-sm">Let Gemini extract details instantly</p>
+            </div>
+
+            <div className="flex-1 w-full space-y-3">
+              <div className="flex bg-[#0a0a0b] border border-white/10 rounded-xl p-1 w-fit">
+                <button
+                  type="button"
+                  onClick={() => setAiMode('url')}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${aiMode === 'url' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <LinkIcon className="w-4 h-4" /> URL Link
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiMode('text')}
+                  className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${aiMode === 'text' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                >
+                  <AlignLeft className="w-4 h-4" /> Raw Text
+                </button>
+              </div>
+
+              <div className="flex flex-col md:flex-row gap-3">
+                {aiMode === 'url' ? (
+                  <input
+                    type="url"
+                    placeholder="Paste official notification URL..."
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    value={aiInput.url}
+                    onChange={(e) => setAiInput({ ...aiInput, url: e.target.value })}
+                  />
+                ) : (
+                  <textarea
+                    placeholder="Paste raw notification text..."
+                    rows={2}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-y min-h-[46px]"
+                    value={aiInput.text}
+                    onChange={(e) => setAiInput({ ...aiInput, text: e.target.value })}
+                  />
+                )}
+                
+                <button
+                  type="button"
+                  onClick={handleAIExtract}
+                  disabled={isAiExtracting || (!aiInput.url && !aiInput.text)}
+                  className="px-6 py-2.5 bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap h-fit"
+                >
+                  {isAiExtracting ? <Loader2 className="w-5 h-5 animate-spin text-blue-400" /> : <Wand2 className="w-5 h-5 text-blue-400" />}
+                  {isAiExtracting ? 'Extracting...' : 'Extract & Fill'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form Navigation */}
       <div className="flex border-b border-white/5 bg-[#0a0a0b]/40 overflow-x-auto no-scrollbar">
@@ -411,11 +575,11 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-gray-500">Min Age</label>
-                        <input type="number" name="eligibility.minAge" value={formData.eligibility.minAge || ''} onChange={handleChange} className="w-full bg-white/5 border border-white/5 py-3 px-4 rounded-xl text-white" />
+                        <input type="number" name="eligibility.minAge" value={formData.eligibility?.minAge ?? ''} onChange={handleChange} className="w-full bg-white/5 border border-white/5 py-3 px-4 rounded-xl text-white" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-gray-500">Max Age</label>
-                        <input type="number" name="eligibility.maxAge" value={formData.eligibility.maxAge || ''} onChange={handleChange} className="w-full bg-white/5 border border-white/5 py-3 px-4 rounded-xl text-white" />
+                        <input type="number" name="eligibility.maxAge" value={formData.eligibility?.maxAge ?? ''} onChange={handleChange} className="w-full bg-white/5 border border-white/5 py-3 px-4 rounded-xl text-white" />
                       </div>
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-gray-500">Age Relaxation Info</label>
@@ -430,7 +594,7 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
                       {['general', 'obc', 'scSt', 'female'].map((cat) => (
                         <div key={cat} className="space-y-2">
                           <label className="text-xs font-bold text-gray-500 capitalize">{cat}</label>
-                          <input type="number" name={`applicationFee.${cat}`} value={formData.applicationFee[cat]} onChange={handleChange} className="w-full bg-white/5 border border-white/5 py-3 px-4 rounded-xl text-white font-mono" />
+                          <input type="number" name={`applicationFee.${cat}`} value={formData.applicationFee[cat] ?? ''} onChange={handleChange} className="w-full bg-white/5 border border-white/5 py-3 px-4 rounded-xl text-white font-mono" />
                         </div>
                       ))}
                    </div>
@@ -441,10 +605,76 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
                      <h3 className="text-xl font-bold text-white">Vacancy Breakdown</h3>
                      <div className="space-y-1 text-right">
                         <label className="text-xs font-bold text-gray-500 uppercase">Total Posts</label>
-                        <input type="number" name="vacancy.total" value={formData.vacancy.total} onChange={handleChange} className="bg-transparent text-right text-2xl font-black text-blue-500 focus:outline-none w-32" />
+                        <input type="number" name="vacancy.total" value={formData.vacancy?.total ?? ''} onChange={handleChange} className="bg-transparent text-right text-2xl font-black text-blue-500 focus:outline-none w-32" />
                      </div>
                    </div>
-                   <p className="text-gray-500 italic text-sm">Add category-wise or post-wise vacancy splitting here.</p>
+                   
+                   <div className="space-y-4">
+                     {formData.vacancy.breakdown?.map((item: any, idx: number) => (
+                       <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white/5 p-5 rounded-2xl border border-white/5 group">
+                         <div className="flex-1 w-full space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Category / Post Name</label>
+                            <input 
+                              type="text" 
+                              value={item.post || ''}
+                              onChange={(e) => {
+                                const newBreakdown = [...(formData.vacancy.breakdown || [])];
+                                newBreakdown[idx].post = e.target.value;
+                                setFormData((prev: any) => ({ ...prev, vacancy: { ...prev.vacancy, breakdown: newBreakdown } }));
+                              }}
+                              placeholder="e.g. General, UR, Inspector, Clerk..."
+                              className="w-full bg-[#0a0a0b] border border-white/10 py-3.5 px-5 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
+                            />
+                         </div>
+                         <div className="w-full sm:w-32 space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest ml-1">Count</label>
+                            <input 
+                              type="number" 
+                              value={item.count === 0 ? '' : item.count}
+                              onChange={(e) => {
+                                const newBreakdown = [...(formData.vacancy.breakdown || [])];
+                                newBreakdown[idx].count = parseInt(e.target.value) || 0;
+                                setFormData((prev: any) => ({ ...prev, vacancy: { ...prev.vacancy, breakdown: newBreakdown } }));
+                                
+                                // Auto-update total count calculation based on breakdown sum
+                                const newTotal = newBreakdown.reduce((sum, item) => sum + (parseInt(item.count) || 0), 0);
+                                if (newTotal > 0) {
+                                  setFormData((prev: any) => ({ ...prev, vacancy: { ...prev.vacancy, total: newTotal } }));
+                                }
+                              }}
+                              placeholder="0"
+                              className="w-full bg-[#0a0a0b] border border-white/10 py-3.5 px-5 rounded-xl text-white font-mono outline-none focus:ring-2 focus:ring-blue-500/30 transition-all text-center"
+                            />
+                         </div>
+                         <div className="pt-6 sm:pt-0">
+                           <button
+                             type="button"
+                             onClick={() => {
+                               const newBreakdown = formData.vacancy.breakdown.filter((_: any, i: number) => i !== idx);
+                               setFormData((prev: any) => ({ ...prev, vacancy: { ...prev.vacancy, breakdown: newBreakdown } }));
+                               
+                               const newTotal = newBreakdown.reduce((sum: number, item: any) => sum + (parseInt(item.count) || 0), 0);
+                               setFormData((prev: any) => ({ ...prev, vacancy: { ...prev.vacancy, total: newTotal } }));
+                             }}
+                             className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white p-3.5 rounded-xl transition-all sm:mt-6 cursor-pointer"
+                           >
+                             <Trash2 className="w-5 h-5" />
+                           </button>
+                         </div>
+                       </div>
+                     ))}
+                     
+                     <button
+                       type="button"
+                       onClick={() => {
+                         const newBreakdown = [...(formData.vacancy.breakdown || []), { post: '', count: 0 }];
+                         setFormData((prev: any) => ({ ...prev, vacancy: { ...prev.vacancy, breakdown: newBreakdown } }));
+                       }}
+                       className="w-full py-4 border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-2xl text-gray-400 font-bold hover:text-blue-400 transition-all flex items-center justify-center gap-2 group cursor-pointer"
+                     >
+                       <Plus className="w-5 h-5 group-hover:scale-125 transition-all" /> Add Vacancy Detail
+                     </button>
+                   </div>
                 </div>
              </motion.div>
           )}
@@ -519,7 +749,7 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
                     <input
                       type="text"
                       name="seo.metaTitle"
-                      value={formData.seo.metaTitle}
+                      value={formData.seo?.metaTitle ?? ''}
                       onChange={handleChange}
                       placeholder="Title tag for search engines"
                       className="w-full bg-[#0a0a0b] border border-white/10 py-4 px-6 rounded-2xl text-white focus:outline-none transition-all"
@@ -529,7 +759,7 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
                     <label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-1">Meta Description</label>
                     <textarea
                       name="seo.metaDescription"
-                      value={formData.seo.metaDescription}
+                      value={formData.seo?.metaDescription ?? ''}
                       onChange={handleChange}
                       rows={3}
                       placeholder="Short summary for search results (Max 160 chars)"
@@ -589,6 +819,22 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
            </div>
         </div>
       </form>
+
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title={modalContent.title}
+      >
+        <p className="leading-relaxed">{modalContent.message}</p>
+        <div className="mt-6 flex justify-end">
+          <button 
+            onClick={() => setIsModalOpen(false)}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold transition-all"
+          >
+            Acknowledge
+          </button>
+        </div>
+      </Modal>
 
       <style jsx global>{`
         .glass-editor .ql-toolbar.ql-snow {

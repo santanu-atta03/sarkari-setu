@@ -101,3 +101,39 @@ exports.protectUser = async (req, res, next) => {
   req.user = { id: user._id, email: user.email, role: 'user' };
   return next();
 };
+
+/**
+ * Verifies any valid JWT (Admin or User).
+ * Checks Admin first, then User.
+ */
+exports.protectAny = async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) return res.status(401).json({ success: false, message: 'Login required.' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Try Admin first
+    let actor = await Admin.findById(decoded.id);
+    if (actor && actor.isActive) {
+      req.admin = { id: actor._id, email: actor.email, role: actor.role };
+      req.user = req.admin; // Shadow for controllers looking for req.user
+      return next();
+    }
+
+    // Try User
+    actor = await User.findById(decoded.id);
+    if (actor && actor.isActive) {
+      req.user = { id: actor._id, email: actor.email, role: 'user' };
+      return next();
+    }
+
+    return res.status(401).json({ success: false, message: 'Account not found.' });
+  } catch (err) {
+    return res.status(401).json({ success: false, message: 'Invalid or expired token.' });
+  }
+};

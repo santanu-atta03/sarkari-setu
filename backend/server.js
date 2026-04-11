@@ -18,6 +18,24 @@ const startServer = async () => {
   // Connect to MongoDB first
   await connectDB();
 
+  // ─── Auto-Seed Super Admin ─────────────────────────────────────────────
+  try {
+    const Admin = require('./src/models/Admin');
+    const existingAdmin = await Admin.findOne({ email: process.env.ADMIN_EMAIL });
+    if (!existingAdmin) {
+      await Admin.create({
+        name: 'Super Admin',
+        email: process.env.ADMIN_EMAIL,
+        password: process.env.ADMIN_PASSWORD,
+        role: 'super_admin',
+        isActive: true
+      });
+      console.log('✨ [Seeder] Super admin created successfully');
+    }
+  } catch (err) {
+    console.error('❌ [Seeder] Failed to auto-seed admin:', err.message);
+  }
+
   const server = app.listen(PORT, () => {
     console.log(`[Server] SarkariSetu API running on port ${PORT} [${process.env.NODE_ENV}]`);
     console.log(`[Server] Health: http://localhost:${PORT}/health`);

@@ -1,26 +1,17 @@
 const express = require('express');
-const scraperService = require('../services/scraper/ScraperService');
+const IngestionController = require('../controllers/IngestionController');
 // const { protect, authorize } = require('../middleware/auth'); // Assuming auth exists
 
 const router = express.Router();
 
-// Manual trigger for scraping
-// router.post('/run', protect, authorize('admin'), async (req, res) => {
+// Manual trigger for scraping (Existing)
 router.post('/run', async (req, res) => {
-  try {
-    const results = await scraperService.runAll();
-    res.json({
-      success: true,
-      message: 'Scraping process completed.',
-      results,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error during manual scraping.',
-      error: error.message,
-    });
-  }
+  // ... this currently uses the old architecture
 });
+
+// New AI-Powered Discovery Flow
+router.post('/discover', IngestionController.triggerCrawl);
+router.get('/drafts', IngestionController.getDrafts);
+router.patch('/publish/:id', IngestionController.publishJob);
 
 module.exports = router;

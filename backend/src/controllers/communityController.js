@@ -60,7 +60,11 @@ exports.addComment = async (req, res) => {
   try {
     const { jobId } = req.params;
     const { content, parentCommentId } = req.body;
-    const userId = req.user.id; // User authentication required
+    
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Authentication required to post comments.' });
+    }
+    const userId = req.user.id; 
 
     if (!content || !content.trim()) {
       return res.status(400).json({ success: false, message: 'Content is required' });
