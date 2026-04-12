@@ -39,15 +39,18 @@ app.use(helmet({
 }));
 
 // CORS — allow the Next.js frontend and any configured client URL
+const isProd = process.env.NODE_ENV === 'production';
 const allowedOrigins = [
-  process.env.CLIENT_URL || 'http://localhost:3000',
+  'http://localhost:3000',
   'http://localhost:3001',
-];
+  'http://127.0.0.1:3000',
+  process.env.CLIENT_URL,
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow server-to-server and same-origin requests (no origin header)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(origin) || (!isProd && origin.startsWith('http://localhost:'))) {
       return callback(null, true);
     }
     callback(new Error(`CORS policy: origin ${origin} not allowed`));
