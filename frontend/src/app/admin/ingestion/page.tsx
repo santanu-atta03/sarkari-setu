@@ -14,9 +14,7 @@ import {
   RefreshCcw,
   Plus
 } from 'lucide-react';
-import axios from 'axios';
-
-const API_BASE = 'http://localhost:5000/api';
+import api from '@/lib/api';
 
 export default function IngestionPage() {
   const [url, setUrl] = useState('https://ssc.gov.in/notices');
@@ -30,7 +28,7 @@ export default function IngestionPage() {
 
   const fetchDrafts = async () => {
     try {
-      const { data } = await axios.get(`${API_BASE}/scraper/drafts`);
+      const { data } = await api.get('/scraper/drafts');
       setDrafts(data.data);
     } catch (err) {
       console.error('Failed to fetch drafts', err);
@@ -41,7 +39,7 @@ export default function IngestionPage() {
     setLoading(true);
     setStatus({ type: null, message: '' });
     try {
-      const { data } = await axios.post(`${API_BASE}/scraper/discover`, { url });
+      const { data } = await api.post('/scraper/discover', { url });
       setStatus({ type: 'success', message: data.message });
       fetchDrafts();
     } catch (err: any) {
@@ -53,7 +51,7 @@ export default function IngestionPage() {
 
   const handlePublish = async (id: string) => {
     try {
-      await axios.patch(`${API_BASE}/scraper/publish/${id}`);
+      await api.patch(`/scraper/publish/${id}`);
       setDrafts(drafts.filter(d => d._id !== id));
       setStatus({ type: 'success', message: 'Job published successfully!' });
     } catch (err) {

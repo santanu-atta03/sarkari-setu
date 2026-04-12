@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Download, Search, Filter, FileText } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState<any[]>([]);
@@ -12,8 +13,8 @@ export default function ResourcesPage() {
   useEffect(() => {
     async function fetchResources() {
       try {
-        const res = await fetch('http://localhost:5000/api/engagement/resources');
-        const data = await res.json();
+        const res = await api.get('/engagement/resources');
+        const data = res.data;
         if (Array.isArray(data)) setResources(data);
       } catch (err) {
         console.error('Error fetching resources:', err);

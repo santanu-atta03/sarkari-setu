@@ -11,8 +11,7 @@ interface Props {
 
 export async function generateStaticParams() {
   try {
-    const baseURL = process.env.NEXT_PUBLIC_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    const resp = await api.get(`${baseURL}/jobs/slugs`);
+    const resp = await api.get('/jobs/slugs');
     if (resp.data.success && Array.isArray(resp.data.data)) {
        return resp.data.data.map((job: any) => ({
           slug: job.slug,
@@ -27,8 +26,7 @@ export async function generateStaticParams() {
 
 const getJob = cache(async (slug: string) => {
   try {
-    const baseURL = process.env.NEXT_PUBLIC_INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-    const resp = await api.get(`${baseURL}/jobs/${slug}`);
+    const resp = await api.get(`/jobs/${slug}`);
     return resp.data.data;
   } catch (err) {
     console.error('Error fetching job:', err);

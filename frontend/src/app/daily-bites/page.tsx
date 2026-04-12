@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, CheckCircle2, AlertCircle, RefreshCw, Calendar } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function DailyBitesPage() {
   const [affairs, setAffairs] = useState<any[]>([]);
@@ -16,8 +17,8 @@ export default function DailyBitesPage() {
     async function fetchData() {
       try {
         const [affairsRes, quizRes] = await Promise.all([
-          fetch('http://localhost:5000/api/engagement/current-affairs').then(res => res.json()),
-          fetch('http://localhost:5000/api/engagement/daily-quiz').then(res => res.json())
+          api.get('/engagement/current-affairs').then(res => res.data),
+          api.get('/engagement/daily-quiz').then(res => res.data)
         ]);
         if (Array.isArray(affairsRes)) setAffairs(affairsRes);
         if (quizRes && quizRes.questions) setQuiz(quizRes);

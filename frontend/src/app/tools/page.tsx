@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Calculator, Target, ArrowRight, IndianRupee, BarChart3, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '@/lib/api';
 
 export default function ToolsPage() {
   const [activeTool, setActiveTool] = useState<'salary' | 'cutoff'>('cutoff');
@@ -22,12 +23,7 @@ export default function ToolsPage() {
     e.preventDefault();
     setSalaryLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/engagement/salary-calculator', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ position: salaryPosition })
-      });
-      const data = await res.json();
+      const { data } = await api.post('/engagement/salary-calculator', { position: salaryPosition });
       setSalaryResult(data);
     } catch (err) {
       console.error(err);
@@ -41,16 +37,11 @@ export default function ToolsPage() {
     if (!cutoffMarks) return;
     setCutoffLoading(true);
     try {
-      const res = await fetch('http://localhost:5000/api/engagement/predict-cutoff', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          exam: cutoffExam, 
-          category: cutoffCategory, 
-          expectedMarks: Number(cutoffMarks) 
-        })
+      const { data } = await api.post('/engagement/predict-cutoff', { 
+        exam: cutoffExam, 
+        category: cutoffCategory, 
+        expectedMarks: Number(cutoffMarks) 
       });
-      const data = await res.json();
       setCutoffResult(data);
     } catch (err) {
       console.error(err);

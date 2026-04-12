@@ -139,7 +139,7 @@ export default function JobForm({ initialData, isEdit = false }: JobFormProps) {
 
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('sarkari_token') : null;
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sarkari-setu-1.onrender.com/api';
       
       const response = await axios.post(`${apiUrl}/upload/image`, uploadData, {
         headers: {

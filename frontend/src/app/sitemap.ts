@@ -3,7 +3,6 @@ import api from '@/lib/api';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseURL = process.env.NEXT_PUBLIC_SITE_URL || 'https://sarkarisetu.com';
-  const apiURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
   // Base routes
   const routes = ['', '/jobs', '/about', '/contact'].map((route) => ({
@@ -16,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch all jobs to include in sitemap
   let jobRoutes: any[] = [];
   try {
-    const resp = await api.get(`${apiURL}/jobs?limit=1000`);
+    const resp = await api.get('/jobs?limit=1000');
     const jobs = resp.data.data;
     jobRoutes = jobs.map((job: any) => ({
       url: `${baseURL}/jobs/${job.slug}`,
