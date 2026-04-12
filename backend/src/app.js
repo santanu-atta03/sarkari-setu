@@ -40,11 +40,15 @@ app.use(helmet({
 
 // CORS — allow the Next.js frontend and any configured client URL
 const isProd = process.env.NODE_ENV === 'production';
+const configClientURL = process.env.CLIENT_URL || '';
+const clientOrigins = configClientURL.split(',').map(url => url.trim()).filter(Boolean);
+
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://127.0.0.1:3000',
-  process.env.CLIENT_URL,
+  'https://sarkarisetu-two.vercel.app', // Explicitly allow the production frontend
+  ...clientOrigins,
 ].filter(Boolean);
 
 app.use(cors({
